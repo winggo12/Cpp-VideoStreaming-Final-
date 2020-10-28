@@ -1,53 +1,32 @@
 #include <iostream>
 #include <unistd.h>
-#include<string.h>
+#include <string.h>
 #include <vector>
 #include <thread>
 #include <mutex>
 #include <sys/socket.h>
 #include <condition_variable>
 #include <arpa/inet.h>
-#include <opencv2/opencv.hpp>
 #include <atomic>
 
-//std::atomic<bool> ready{};
-//std::condition_variable var;
-cv::Mat img;// = cv::Mat::zeros(640, 480, CV_8UC3);
 std::mutex m1;
+std::string msgs[] = {"0", "1, 0.1, 0.1, 0.9, 0.9", "2, 0.3, 0.3, 0.7, 0.5"};
 int connectionHandler(int socket)
 {
-	//std::unique_lock<std::mutex> lg(m1);
-	//var.wait(lg, [=]{return ready.load();});
 	std::lock_guard<std::mutex> lg(m1);
-	//cv::Mat frame = cv::Mat::zeros(640, 480, CV_8UC3);
-	//cv::resize(img,img,cv::Size(640,480));
-	//u_char *data = img.data;
-	img = (img.reshape(0,1));
-	int imgSize = img.total() * img.elemSize();
+
 	int bytes = 0;
-	if ((bytes = send(socket, img.clone().data, imgSize, 0)) < 0)
+	std::string msg = msgs[int(rand() % 3)];
+	if ((bytes = send(socket, msg.c_str(), msg.length(), 0)) < 0)
 	{
+		std::cout << "String was not sent!" << std::endl;
         return -1;
     }
-	//var.notify_all();
-	return 0;
-}
-void readFrame()
-{
-	cv::VideoCapture vc("../videos/48.mp4");
-	while(vc.isOpened())
-	{
-		//std::unique_lock<std::mutex> ul(m1);
-		{
-			std::lock_guard<std::mutex> lg(m1);
-			vc >> img;
-			cv::resize(img,img,cv::Size(640,480));
-			cv::imshow("window", img);
-		}
-		cv::waitKey(500);
-		//ready.store(false);
-		//var.wait(ul, [=]{return ready.load();});
+	std::cout << "String sent: " << msg << std::endl;
+	if (int closeStat = close(socket) < 0) {
+		return -1;
 	}
+	return 0;
 }
 
 void print(int i)
@@ -56,10 +35,14 @@ void print(int i)
 }
 std::vector<std::thread> th_list;
 
-int main()
+int main(int argc, char** argv)
 {
-	th_list.push_back(std::thread(readFrame));
-
+	// th_list.push_back(std::thread(readFrame));
+	if (argc != 2) {
+		std::cout << "Wrong number of input parameters" << std::endl;
+		return 0;
+	}
+	// std::cout << argc << std::endl;
 	int socket_id, new_socket, c;
 	struct sockaddr_in server, client;
 	char *message;
@@ -70,10 +53,12 @@ int main()
 		std::cout << "Failed to create socket!" << std::endl;
 		return -1;
 	}
+	std::cout << argv[0] << std::endl;
+	std::cout << argv[1] << std::endl;
 	std::cout << "Created socket!" << std::endl;
 	server.sin_addr.s_addr = INADDR_ANY;
 	server.sin_family = AF_INET;
-	server.sin_port = htons( 8888 );
+	server.sin_port = htons(atoi(argv[1]));
 	if (bind(socket_id , (struct sockaddr *)&server , sizeof(server)) < 0)
 	{
 		std::cout << "Bind error" << std::endl;
