@@ -9,25 +9,26 @@
 #include <arpa/inet.h>
 #include <atomic>
 
-std::mutex m1;
-std::string msgs[] = {"0", "1, 0.1, 0.1, 0.9, 0.9", "2, 0.3, 0.3, 0.7, 0.5"};
 std::vector<std::thread> th_list;
 
 int connectionHandler(int socket)
 {
-	std::lock_guard<std::mutex> lg(m1);
+    const unsigned int MAX_BUF_LENGTH = 4096;
+    std::vector<char> buffer(MAX_BUF_LENGTH);
+    std::string rcv;   
+    int bytesReceived = 0;
 
-	int bytes = 0;
-	std::string msg = msgs[int(rand() % 3)];
-	if ((bytes = send(socket, msg.c_str(), msg.length(), 0)) < 0)
-	{
-		std::cout << "String was not sent!" << std::endl;
-        return -1;
-    }
-	std::cout << "String sent: " << msg << std::endl;
-	if (int closeStat = close(socket) < 0) {
-		return -1;
-	}
+    do {
+        bytesReceived = recv(socket, &buffer[0], buffer.size(), 0);
+        // append string from buffer.
+        if ( bytesReceived == -1 ) { 
+        // error 
+        } else {
+        rcv.append( buffer.cbegin(), buffer.cend() );
+        }
+    } while ( bytesReceived == MAX_BUF_LENGTH );
+        
+    std::cout << rcv << std::endl;
 	return 0;
 }
 
@@ -75,13 +76,11 @@ int main(int argc, char** argv)
 		puts("Connection accepted");
 		//Reply to the client
 		th_list.push_back(std::thread(connectionHandler, new_socket));
-	}
-	
-
-	for(std::thread& th : th_list)
-	{
-		if(th.joinable())
-			th.join();
+		for(std::thread& th : th_list)
+		{
+			if(th.joinable())
+				th.join();
+		}
 	}
 
 	return 0;

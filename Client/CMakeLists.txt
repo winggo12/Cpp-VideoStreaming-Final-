@@ -10,5 +10,5 @@ set(PLATFORM_SPECIFIC_LIBS "-lpthread")
 aux_source_directory(. DIR_SRCS)
 
 add_executable(client ${DIR_SRCS})
-target_link_libraries(client "${OpenCV_LIBS}")
+target_link_libraries(client "${OpenCV_LIBS}" -lpthread)
 set_property(TARGET client PROPERTY CXX_STANDARD 11)
