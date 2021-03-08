@@ -11,6 +11,8 @@
 
 std::mutex m1;
 std::string msgs[] = {"0", "1, 0.1, 0.1, 0.9, 0.9", "2, 0.3, 0.3, 0.7, 0.5"};
+std::vector<std::thread> th_list;
+
 int connectionHandler(int socket)
 {
 	std::lock_guard<std::mutex> lg(m1);
@@ -33,13 +35,13 @@ void print(int i)
 {
 	std::cout << i << std::endl;
 }
-std::vector<std::thread> th_list;
 
 int main(int argc, char** argv)
 {
 	// th_list.push_back(std::thread(readFrame));
 	if (argc != 2) {
 		std::cout << "Wrong number of input parameters" << std::endl;
+		std::cerr << "Usage: server <serverPort> " << std::endl;
 		return 0;
 	}
 	// std::cout << argc << std::endl;
